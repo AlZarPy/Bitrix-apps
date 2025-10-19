@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Список 10 последних активных сделок{% endblock %}
+{% block content %}
+
+<div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+  <a href="#" id="toRoot" class="btn">На главную</a>
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<script>
+  document.getElementById('toRoot').addEventListener('click', function (e) {
+    e.preventDefault();
+    if (window.BX24 && BX24.reloadWindow) {
+      // Перезагружает ТЕКУЩЕЕ окно приложения.
+      // Битрикс заново пришлёт AUTH_ID, 403 не будет, дублей тоже.
+      BX24.reloadWindow();
+    } else {
+      // Фоллбэк для локального открытия вне Б24
+      window.location.href = "{% url 'internship_b24:index' %}";
+    }
+  });
+</script>
+  <button id="btnReload" class="btn btn--primary" type="button">Обновить список</button>
+</div>
+
+<h2 style="margin:8px 0 12px">Список 10 последних активных сделок</h2>
+
+<div style="overflow:auto;border:1px solid #e5e7eb;border-radius:12px">
+  <table id="dealsTable" style="width:100%;border-collapse:collapse;min-width:920px">
+    <thead style="background:#f9fafb;position:sticky;top:0">
+      <tr>
+        <th>ID</th>
+        <th>Название</th>
+        <th>Тип</th>
+        <th>Сумма</th>
+        <th>Валюта</th>
+        <th>Стадия</th>
+        <th>Дата начала</th>
+        <th>Дата завершения</th>
+        <th>Приоритет</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<p id="hint" class="muted" style="margin-top:8px"></p>
+
+<style>
+  #dealsTable th, #dealsTable td { border:1px solid #e5e7eb; padding:8px 10px; text-align:left; }
+  #dealsTable th { font-weight:600; color:#374151; }
+  #dealsTable tbody tr:nth-child(even){ background:#fafafa; }
+</style>
+
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<script>
+(function(){
+  const tableBody = document.querySelector('#dealsTable tbody');
+  const hint = document.getElementById('hint');
+  const btnReload = document.getElementById('btnReload');
+
+  // Имя пользовательского поля
+  const UF = 'UF_CRM_1760383363428';
+
+  const j = (o)=>JSON.stringify(o,null,2);
+  const fmt = (v)=> (v===null||v===undefined||v===''?'—':String(v));
+  const money = (op,c)=> op ? `${op} ${c||''}` : '—';
+  const dt = (s)=> s ? s.split('T')[0].split('-').reverse().join('.') : '—';
+
+  function ensure(){ return new Promise(r=>{ if(window.BX24) BX24.init(()=>r()); else r(); }); }
+  function call(m, p){ return new Promise((res,rej)=>BX24.callMethod(m,p||{},r=>r.error()?rej(r.error()):res(r.data()))); }
+
+  // --- словари для человекочитаемых значений ---
+async function getTypeNames(){
+  // 1) пробуем взять словарь из схемы полей
+  try {
+    const fields = await call('crm.deal.fields');
+    const items = (fields && fields.TYPE_ID && Array.isArray(fields.TYPE_ID.items))
+      ? fields.TYPE_ID.items : [];
+    if (items.length) {
+      const map = {};
+      items.forEach(i => map[i.ID] = i.VALUE);
+      return map; // например: { GOODS:"Продажа товара", SERVICES:"Продажа услуги", ... }
+    }
+  } catch(_) { /* игнорируем, идём на фоллбэк */ }
+
+  // 2) фоллбэк — ручной словарь на всякий случай
+  return {
+    GOODS:    'Продажа товара',
+    SERVICES: 'Продажа услуги',
+    COMPLEX:  'Комплексная продажа',
+    SALE:     'Продажа'
+  };
+}
+
+  async function getCurrencyNames(){
+    const list = await call('crm.currency.list');
+    const map = {};
+    (list||[]).forEach(c=> map[c.CURRENCY]=c.AMOUNT_CNT ? c.FORMAT_STRING?.replace('#', c.CURRENCY) : c.CURRENCY_NAME || c.CURRENCY);
+    // Если формат строковый странный — запасной вариант:
+    (list||[]).forEach(c=> { if(!map[c.CURRENCY]) map[c.CURRENCY] = c.CURRENCY_NAME || c.CURRENCY; });
+    return map; // RUB -> "Российский рубль"
+  }
+
+  async function getStageNamesForCategories(categoryIds){
+    // В Б24 стадии лежат в сущностях DEAL_STAGE (категория 0) или DEAL_STAGE_<CATEGORY_ID>
+    const uniq = [...new Set(categoryIds)];
+    const map = {};
+    for(const cid of uniq){
+      const ENTITY_ID = (cid && cid !== '0') ? `DEAL_STAGE_${cid}` : 'DEAL_STAGE';
+      const statuses = await call('crm.status.list', { filter: { ENTITY_ID } });
+      (statuses||[]).forEach(s => map[s.STATUS_ID] = s.NAME);
+    }
+    return map; // NEW -> "Новая", WON -> "Успешно реализовано" и т.п.
+  }
+
+  async function getUserFieldDictionary(){
+    // Получаем описание пользовательских полей сделок и выцепляем список значений для нужного UF
+    const ufs = await call('crm.deal.userfield.list');
+    const def = (ufs||[]).find(u => u.FIELD_NAME === UF);
+    const map = {};
+    if(def && Array.isArray(def.LIST)){
+      def.LIST.forEach(item => { map[String(item.ID)] = item.VALUE; });
+    }
+    return map; // "48" -> "Высокий", и т.п.
+  }
+
+  function drawRows(deals, dicts){
+    tableBody.innerHTML = '';
+    deals.forEach(d=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${d.ID}</td>
+        <td>${fmt(d.TITLE)}</td>
+        <td>${fmt(dicts.types[d.TYPE_ID] || d.TYPE_ID)}</td>
+        <td>${money(d.OPPORTUNITY, d.CURRENCY_ID)}</td>
+        <td>${fmt(dicts.currencies[d.CURRENCY_ID] || d.CURRENCY_ID)}</td>
+        <td>${fmt(dicts.stages[d.STAGE_ID] || d.STAGE_ID)}</td>
+        <td>${dt(d.BEGINDATE)}</td>
+        <td>${dt(d.CLOSEDATE)}</td>
+        <td>${fmt(dicts.uf[d[UF]] || d[UF])}</td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  async function load(){
+    hint.textContent = 'Загрузка…';
+    tableBody.innerHTML = '';
+    await ensure();
+
+    // 1) Берём последние активные сделки
+    const list = await call('crm.deal.list', {
+      order:  { 'DATE_MODIFY': 'DESC' },
+      filter: { 'STAGE_SEMANTIC_ID': 'P' },
+      select: [
+        'ID','TITLE','TYPE_ID','OPPORTUNITY','CURRENCY_ID','STAGE_ID',
+        'BEGINDATE','CLOSEDATE','CATEGORY_ID', UF
+      ]
+    });
+    const deals = (list||[]).slice(0,10);
+
+    if(!deals.length){
+      hint.textContent = 'Активных сделок не найдено.';
+      return;
+    }
+
+    // 2) Подтягиваем словари: типы, валюты, стадии, список значений UF
+    const categoryIds = deals.map(d => d.CATEGORY_ID);
+    const [types, currencies, stages, uf] = await Promise.all([
+      getTypeNames(),
+      getCurrencyNames(),
+      getStageNamesForCategories(categoryIds),
+      getUserFieldDictionary()
+    ]);
+
+    // 3) Рисуем таблицу
+    drawRows(deals, { types, currencies, stages, uf });
+    hint.textContent = '';
+  }
+
+  btnReload.addEventListener('click', load);
+  load();
+})();
+</script>
+
+{% endblock %}
+

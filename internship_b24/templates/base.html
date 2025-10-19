@@ -1,0 +1,16 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}internship_B24{% endblock %}</title>
+  <link href="{% static 'internship_b24/css/app.css' %}" rel="stylesheet">
+</head>
+<body class="page">
+  <div class="page__bg"></div>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
