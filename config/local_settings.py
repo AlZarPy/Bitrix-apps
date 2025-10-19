@@ -30,9 +30,10 @@ DOMAIN = "56218ef983f3-8301993767665431593.ngrok-free.app"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'DB_internship_B24',
+        'NAME': 'db_internship_b24',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
-        'HOST': 'localhost',
+        "HOST": "127.0.0.1",
+        "PORT": "5432"
     },
 }

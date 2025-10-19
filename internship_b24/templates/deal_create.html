@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Создать сделку{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="heading">Создать сделку</h1>
+
+  <form method="post" class="form-grid">
+    {% csrf_token %}
+    <div class="form-row">
+      <label>Название *</label>
+      {{ form.title }}
+    </div>
+
+    <div class="form-row">
+      <label>Тип</label>
+      {{ form.type_id }}
+    </div>
+
+    <div class="form-row">
+      <label>Сумма</label>
+      {{ form.opportunity }}
+    </div>
+
+    <div class="form-row">
+      <label>Валюта</label>
+      {{ form.currency_id }}
+    </div>
+
+    <div class="form-row">
+      <label>Дата начала</label>
+      {{ form.begindate }}
+    </div>
+
+    <div class="form-row">
+      <label>Дата завершения</label>
+      {{ form.closedate }}
+    </div>
+
+    <div class="form-row">
+      <label>ID контакта (необяз.)</label>
+      {{ form.contact_id }}
+    </div>
+
+    <div class="form-row">
+      <label>Приоритет</label>
+      {{ form.uf_priority }}
+    </div>
+
+    <div class="form-actions">
+      <a class="btn btn-secondary" href="{% url 'internship_b24:deals_top10' %}">Отмена</a>
+      <button class="btn btn-primary" type="submit">Создать</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "internship_b24",
+    "integration_utils.bitrix24",
 ]
 
 MIDDLEWARE = [
@@ -61,8 +62,6 @@ DATABASES = {
 
 # Статика
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "static_root"
-STATICFILES_DIRS = []
 
 # Настройки для работы в iFrame Bitrix24
 X_FRAME_OPTIONS = "ALLOWALL"

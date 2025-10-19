@@ -1,10 +1,18 @@
-{% extends "internship_b24/base.html" %}
+{% extends "base.html" %}
 {% block title %}internship_B24 · Главная{% endblock %}
 {% block content %}
-  <h1 class="heading">internship_B24</h1>
-  <p class="muted">Базовый проект для 5 модулей Bitrix24. </p>
+  <h1 class="heading">Добро пожаловать, {{request.bitrix_user.first_name}} {{request.bitrix_user.last_name}}!</h1>
+  <p class="muted">Проект 5 модулей Bitrix24. </p>
   <div class="grid">
-    <a class="btn btn--module" href="{% url 'internship_b24:module1' %}">Приложение 1. Управление сделками</a>
+ <details class="dropdown">
+  <summary class="btn btn--module">Приложение 1. Управление сделками </summary>
+      <div class="dropdown-menu">
+        <a href="{% url 'internship_b24:deals_top10' %}">10 последних активных сделок</a>
+        <a href="{% url 'internship_b24:deal_create' %}">Создать сделку</a>
+      </div>
+</details>
+
+
     <a class="btn btn--module" href="{% url 'internship_b24:module2' %}">Приложение 2. Товары и QR-коды</a>
     <a class="btn btn--module" href="{% url 'internship_b24:module3' %}">Приложение 3. Таблица сотрудников</a>
     <a class="btn btn--module" href="{% url 'internship_b24:module4' %}">Приложение 4. Компании на карте</a>

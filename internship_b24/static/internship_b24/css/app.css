@@ -3,14 +3,18 @@
   --bg-overlay: rgba(255,255,255,.75);
   --radius: 16px;
   --gap: 20px;
+
   --btn-bg: #ffffff;
   --btn-border: #cfd6e4;
   --btn-hover: #f5f7fb;
   --btn-text: #1f2937;
 }
+
 *{box-sizing:border-box}
 html,body{height:100%}
 body.page{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111827}
+
+/* layout */
 .page__bg{
   position:fixed; inset:0;
   background: var(--bg-image);
@@ -24,16 +28,118 @@ body.page{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,san
 }
 .heading{margin:0 0 8px; font-size: 40px; line-height:1.1}
 .muted{margin:0 0 24px; color:#6b7280}
+
+/* grids */
 .grid{
   display:grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
   gap: var(--gap);
 }
+
+/* buttons: по умолчанию инлайн, а модульные — на всю ширину */
 .btn{
-  display:block; text-decoration:none; padding:16px 18px; border-radius:12px;
-  background: var(--btn-bg); color: var(--btn-text); border:1px solid var(--btn-border);
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:12px 16px; border-radius:12px;
+  background: var(--btn-bg); color: var(--btn-text);
+  border:1px solid var(--btn-border);
   transition: transform .06s ease, background .15s ease, box-shadow .15s ease;
+  white-space: nowrap; gap:.5rem;
+  font: inherit;           /* одинаковый шрифт */
+  line-height: 1;          /* фиксируем высоту строки */
+  -webkit-appearance:none; /* убираем нативную стилизацию кнопок */
+  appearance:none;
+  box-sizing: border-box;
+}
+
+/* Чтобы точно совпадала высота — зададим минимальную */
+.toolbar .btn{ min-height: 44px; }
+
+/* Модульные плитки на главной остаются широкими */
+.btn--module{
+  display:block;
+  width:100%;
+  padding:16px 18px;
+  font-weight:600;
+  white-space: normal;
+  text-align:left;
+  line-height:1.25;
+  word-wrap: break-word;
 }
 .btn:hover{background: var(--btn-hover); transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(0,0,0,.06);}
 .btn:active{transform: translateY(0)}
-.btn--module{font-weight:600}
+.btn--module{display:block; width:100%; padding:16px 18px; font-weight:600}
+
+/* Убираем подчеркивание у кнопок-ссылок во всех состояниях */
+.btn,
+.btn:link,
+.btn:visited,
+.btn:hover,
+.btn:active,
+.btn:focus {
+  text-decoration: none;
+}
+
+/* При фокусе оставим видимую, но красивую подсветку (доступность) */
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(30, 99, 255, .25);
+}
+
+/* горизонтальная панель кнопок (на страницах списков) */
+.toolbar{display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap}
+
+/* таблицы */
+.table{
+  width:100%; border-collapse:collapse; min-width:920px;
+}
+.table th,.table td{border:1px solid #e5e7eb; padding:8px 10px; text-align:left}
+.table th{font-weight:600; color:#374151; background:#f9fafb}
+.table tbody tr:nth-child(even){background:#fafafa}
+
+/* dropdown (главная) */
+.dropdown{display:inline-block; position:relative}
+.dropdown summary{list-style:none; cursor:pointer}
+.dropdown summary::-webkit-details-marker{display:none}
+.dropdown[open] .dropdown-menu{animation:fade .12s ease-out}
+.dropdown-menu{
+  position:absolute; left:0; top:calc(100% + .5rem);
+  background:#fff; border:1px solid #e5e7eb; border-radius:.5rem;
+  box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);
+  min-width:260px; padding:.5rem; z-index:5;
+}
+.dropdown-menu a{
+  display:block; padding:.5rem .75rem; border-radius:.375rem;
+  text-decoration:none; color:#111827;
+}
+.dropdown-menu a:hover{background:#f3f4f6}
+@keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+/* card */
+.card{
+  background:#fff; border-radius:16px; padding:24px;
+  box-shadow:0 6px 22px rgba(20,20,30,.06);
+}
+
+/* форма создания сделки */
+.form-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:16px;
+}
+.form-row{ display:flex; flex-direction:column; gap:6px; }
+.form-row label{ font-weight:600; color:#3b3b3b; }
+
+/* выравниваем элементы формы от Django */
+.card input[type="text"],
+.card input[type="number"],
+.card input[type="date"],
+.card select{
+  width:100%; padding:10px 12px;
+  border:1px solid #e3e6ed; border-radius:10px;
+  background:#fff;
+}
+
+/* кнопки формы */
+.form-actions{
+  grid-column:1 / -1; display:flex; gap:12px; margin-top:6px;
+}
+.btn-primary{ background:#1e63ff; color:#fff; border-color:transparent; }
+.btn-secondary{ background:#f7f7fb; color:#111827; border-color:#e3e6ed; }
