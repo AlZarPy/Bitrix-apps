@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+
+  <h2 class="section-title">
+    {{ title }}
+  </h2>
+
+  {% if picture %}
+  <div class="product-image-card">
+    <div class="product-image-inner">
+      <img
+        src="{{ picture }}"
+        alt="{{ title }}"
+      >
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="product-info">
+
+    <div class="product-info__row">
+      <span class="text-label">ID товара&nbsp;</span>{{ product_id }}
+    </div>
+
+    {% if price %}
+    <div class="product-info__row">
+      <span class="text-label">Цена&nbsp;</span>
+      {{ price }}{% if currency %} {{ currency }}{% endif %}
+    </div>
+    {% endif %}
+
+    {% if description %}
+    <div class="product-info__row product-info__row--spaced">
+      <span class="text-label">Описание&nbsp;</span>
+      <div style="margin-top:4px;">
+        {{ description|safe }}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="product-info__row break-all">
+      <span class="text-label">ID ссылки&nbsp;</span>{{ link_id }}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

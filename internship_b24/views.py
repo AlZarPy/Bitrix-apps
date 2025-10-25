@@ -101,7 +101,6 @@ def deal_create(request):
                 fields['CONTACT_ID'] = cd['contact_id']
 
             new_id = but.call_list_method('crm.deal.add', fields={'fields': fields})
-            # опционально — проверка
             _ = but.call_list_method('crm.deal.get', fields={'id': new_id})
 
             return redirect('internship_b24:deals_top10')
@@ -111,8 +110,7 @@ def deal_create(request):
     return render(request, "deal_create.html", {'form': form})
 
 
-# Заглушки для остальных модулей (как и раньше)
-def module2(request): return HttpResponse("Модуль 2: заглушка")
+# Заглушки для остальных модулей
 def module3(request): return HttpResponse("Модуль 3: заглушка")
 def module4(request): return HttpResponse("Модуль 4: заглушка")
 def module5(request): return HttpResponse("Модуль 5: заглушка")

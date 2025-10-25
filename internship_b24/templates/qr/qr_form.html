@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="card">
+
+  <h2 class="section-title">
+    Генерация QR-кода для товара
+  </h2>
+
+  <form method="post" class="form">
+    {% csrf_token %}
+
+    <!-- Поиск товара -->
+    <div class="form-row">
+      <label for="product-search-input">
+        Поиск товара
+      </label>
+
+      <input
+          id="product-search-input"
+          type="text"
+          class="input-field"
+          placeholder="Начните вводить название товара..."
+          autocomplete="off"
+      >
+
+      <div class="form-hint">
+        Введите название товара и выберите из списка
+      </div>
+
+      <!-- Выпадающий список результатов -->
+      <div id="product-search-results"
+           class="autocomplete-dropdown"
+           style="display:none;"></div>
+    </div>
+
+    <!-- Поле ввода ID товара -->
+    <div class="form-row" style="margin-bottom:20px;">
+      <label for="{{ form.product_id.id_for_label }}">
+        {{ form.product_id.label }}{% if form.product_id.field.required %} *{% endif %}
+      </label>
+
+      {{ form.product_id.as_widget|safe }}
+
+      <div class="form-hint">
+        Введите числовой ID товара из Битрикс24
+      </div>
+
+      {% if form.product_id.errors %}
+        <div class="form-error">
+          {% for err in form.product_id.errors %}
+            {{ err }}<br>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Кнопка -->
+    <div class="toolbar" style="margin-top:12px;">
+      <button type="submit" class="btn btn-primary" style="min-width:220px;">
+        Сгенерировать QR-код
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+    const searchInput    = document.getElementById("product-search-input");
+    const resultsBox     = document.getElementById("product-search-results");
+    const productIdInput = document.getElementById("id_product_id"); // Django form field
+
+    let lastQuery = "";
+    let timer = null;
+
+    function hideResults() {
+        resultsBox.style.display = "none";
+        resultsBox.innerHTML = "";
+    }
+
+    function renderResults(list) {
+        if (!list || !list.length) {
+            hideResults();
+            return;
+        }
+
+        resultsBox.innerHTML = "";
+        resultsBox.style.display = "block";
+
+        list.forEach(item => {
+            const row = document.createElement("div");
+            row.className = "autocomplete-item";
+
+            row.innerHTML = `
+                <div class="autocomplete-item__name">${item.name}</div>
+                <div class="autocomplete-item__meta">
+                    ID: ${item.id}
+                    ${item.price ? ` | Цена: ${item.price} ${item.currency || ""}` : ""}
+                </div>
+            `;
+
+            row.addEventListener("click", () => {
+                // ставим ID в форму
+                productIdInput.value = item.id;
+                // подставляем имя в инпут поиска
+                searchInput.value = item.name;
+                // скрываем выпадающий список
+                hideResults();
+            });
+
+            resultsBox.appendChild(row);
+        });
+    }
+
+    function doSearch(q) {
+        if (!q || q.length < 2) {
+            hideResults();
+            return;
+        }
+
+        fetch("{% url 'internship_b24:qr:api_product_search' %}?q=" + encodeURIComponent(q))
+            .then(resp => {
+                if (!resp.ok) {
+                    throw new Error("bad status " + resp.status);
+                }
+                return resp.json();
+            })
+            .then(data => {
+                renderResults(data.results || []);
+            })
+            .catch(() => {
+                hideResults();
+            });
+    }
+
+    function scheduleSearch() {
+        const q = searchInput.value.trim();
+        if (q === lastQuery) return;
+        lastQuery = q;
+
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+            doSearch(q);
+        }, 250);
+    }
+
+    searchInput.addEventListener("input", scheduleSearch);
+
+    // клик вне — скрыть подсказки
+    document.addEventListener("click", (ev) => {
+        if (
+            ev.target !== searchInput &&
+            !resultsBox.contains(ev.target)
+        ) {
+            hideResults();
+        }
+    });
+})();
+</script>
+{% endblock %}

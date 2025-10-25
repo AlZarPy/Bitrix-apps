@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+
+  <h2 class="section-title">
+    QR-код успешно сгенерирован
+  </h2>
+
+  <div class="text-block">
+    <div class="text-row">
+      <span class="text-label">Название:&nbsp;</span>{{ pl.title_cached }}
+    </div>
+    <div class="text-row">
+      <span class="text-label">ID товара:&nbsp;</span>{{ pl.product_id }}
+    </div>
+    <div class="text-row break-all">
+      <span class="text-label">Ссылка:&nbsp;</span>
+      <a href="{{ public_url }}"
+         target="_blank"
+         rel="noopener noreferrer"
+         style="color:#1e63ff; text-decoration:none;">
+        {{ public_url }}
+      </a>
+    </div>
+  </div>
+
+  <div class="pair-grid">
+
+    <!-- карточка с изображением товара -->
+    <div class="box-surface">
+      <div class="media-frame">
+        {% if pl.img_url_cached %}
+          <img
+            src="{{ pl.img_url_cached }}"
+            alt="Товар"
+            class="media-img"
+          >
+        {% else %}
+          <div style="color:#94a3b8; font-size:13px; font-style:italic;">
+            нет изображения
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- карточка с QR-кодом -->
+    <div class="box-surface">
+      <div class="media-frame media-frame--qr">
+        <img
+          src="{{ qr_data_uri }}"
+          alt="QR-код"
+          class="media-img"
+        >
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toolbar" style="margin-top:12px;">
+    <a class="btn btn-secondary" style="min-width:220px;"
+       href="{% url 'internship_b24:qr:qr_form' %}">
+      Сгенерировать ещё один
+    </a>
+
+    <button class="btn btn-primary" style="min-width:160px;"
+            onclick="window.print()">
+      Распечатать
+    </button>
+  </div>
+
+</div>
+{% endblock %}
