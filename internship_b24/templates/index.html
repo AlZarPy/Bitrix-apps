@@ -12,10 +12,18 @@
       </div>
 </details>
 
+    <a class="btn btn--module" href="{% url 'internship_b24:qr:qr_form' %}">Приложение 2. Товары и QR-коды</a>
 
-    <a class="btn btn--module" href="{% url 'internship_b24:module2' %}">Приложение 2. Товары и QR-коды</a>
-    <a class="btn btn--module" href="{% url 'internship_b24:module3' %}">Приложение 3. Таблица сотрудников</a>
-    <a class="btn btn--module" href="{% url 'internship_b24:module4' %}">Приложение 4. Компании на карте</a>
-    <a class="btn btn--module" href="{% url 'internship_b24:module5' %}">Приложение 5. Импорт/экспорт контактов</a>
+    <a class="btn btn--module" href="{% url 'internship_b24:employees:list' %}">Приложение 3. Таблица сотрудников</a>
+
+    <a class="btn btn--module" href="{% url 'internship_b24:map:companies_map' %}">Приложение 4. Компании на карте</a>
+
+    <details class="dropdown">
+        <summary class="btn btn--module">Приложение 5. Импорт/экспорт контактов </summary>
+            <div class="dropdown-menu">
+                <a href="{% url 'internship_b24:contacts:import' %}">Импорт контактов</a>
+                <a href="{% url 'internship_b24:contacts:export' %}">Экспорт контактов</a>
+            </div>
+    </details>
   </div>
 {% endblock %}

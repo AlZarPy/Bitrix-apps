@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<a id="toRoot" class="btn" href="#">На главную</a>
+
+<div class="card">
+  <h1 class="section-title">Сотрудники компании</h1>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Сотрудник</th>
+          <th>Должность</th>
+          <th>Отдел</th>
+          <th>Руководители (вверх по иерархии)</th>
+          <th>Количество звонков >60сек за последние 24 часа</th>
+        </tr>
+      </thead>
+
+
+      <tbody>
+  {% for r in rows %}
+  <tr>
+    <td>
+      <a href="#" onclick="openProfile({{ r.id }}); return false;">
+        {{ r.name }}
+      </a>
+      {% if r.email %}
+        <div class="muted">{{ r.email }}</div>
+      {% endif %}
+    </td>
+
+    <td>
+      {% if r.position %}
+        {{ r.position }}
+      {% else %}
+        <span class="muted">—</span>
+      {% endif %}
+    </td>
+
+    <td>
+      {% if r.department %}
+        {{ r.department }}
+      {% else %}
+        <span class="muted">—</span>
+      {% endif %}
+    </td>
+
+    <td>
+      {% if r.managers and r.managers|length > 0 %}
+        {% for m in r.managers %}
+          <a href="#" onclick="openProfile({{ m.id }}); return false;">{{ m.name }}</a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      {% else %}
+        <span class="muted">Нет</span>
+      {% endif %}
+    </td>
+
+    <td>{{ r.calls_24h }}</td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+    </table>
+  </div>
+
+  <form method="post"
+        action="{% url 'internship_b24:employees:generate_calls' %}"
+        class="form-row"
+        id="generate-calls-form"
+        style="margin-top:16px;">
+    {% csrf_token %}
+    <label for="count" class="input-label">Звонков на сотрудника:</label>
+    <input id="count"
+           name="count"
+           type="number"
+           min="1"
+           max="50"
+           value="10"
+           class="input-field"
+           style="max-width:120px;">
+    <button class="btn" id="generate-calls-btn">Сгенерировать звонки</button>
+    <div class="form-hint">
+      Для каждого сотрудника будет создано заданное число исходящих звонков длительностью от 1 до 180 сек
+      за последние 24 часа. После завершения страница обновится автоматически.
+    </div>
+  </form>
+
+  {% if messages %}
+    <div class="form-hint" style="margin-top:8px;">
+      {% for message in messages %}
+        {{ message }}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<script>
+  (function() {
+    // кнопка генерации
+    const form = document.getElementById('generate-calls-form');
+    const btn = document.getElementById('generate-calls-btn');
+    if (form && btn) {
+      form.addEventListener('submit', function() {
+        btn.disabled = true;
+        btn.textContent = 'Генерируем звонки...';
+      });
+    }
+
+    // "На главную"
+    const btnHome = document.getElementById('toRoot');
+    if (!btnHome) return;
+
+    btnHome.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (window.BX24 && BX24.reloadWindow) {
+        BX24.init(() => BX24.reloadWindow());
+      } else {
+        window.location.href = "{% url 'internship_b24:index' %}";
+      }
+    });
+  })();
+    // открыть профиль сотрудника
+  function openProfile(userId) {
+    if (!userId) return;
+
+    // В iframe Bitrix24 открываем профиль пользователя в слайдере
+    if (window.BX24 && BX24.openPath) {
+      BX24.init(function () {
+        BX24.openPath('/company/personal/user/' + userId + '/');
+      });
+    } else {
+      // Фолбэк для локального запуска: просто новое окно (можно заменить на что угодно)
+      const url = '/company/personal/user/' + userId + '/';
+      window.open(url, '_blank');
+    }
+  }
+</script>
+
+{% endblock %}

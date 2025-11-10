@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="toolbar">
+    <a id="toRoot" class="btn" href="#">На главную</a>
+</div>
+
+<div class="card">
+    <h1 class="section-title">Карта компаний</h1>
+
+    <p class="muted">
+        На карте отображаются активные компании с заполненным адресом из CRM Bitrix24.
+    </p>
+
+    {% if not has_companies %}
+        <p class="form-hint" style="margin-bottom: 12px;">
+            Подходящих компаний не найдено. Проверьте, что в карточках компаний указаны адреса
+            (используются стандартные поля адресов / crm.address).
+        </p>
+    {% endif %}
+
+    <div id="company-map" style="width: 100%; height: 480px;"></div>
+</div>
+
+{# Bitrix24 JS SDK (для корректной работы в iFrame) #}
+<script src="https://api.bitrix24.com/api/v1/"></script>
+
+{# Яндекс.Карты #}
+<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey={{ yandex_api_key }}"></script>
+
+{# Данные компаний для JS #}
+<script id="companies-data" type="application/json">
+{{ companies_json|safe }}
+</script>
+
+<script>
+(function () {
+    // Кнопка "На главную" — логика такая же, как в других модулях
+    const btnHome = document.getElementById('toRoot');
+    if (btnHome) {
+        btnHome.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (window.BX24 && BX24.reloadWindow) {
+                BX24.init(function () {
+                    BX24.reloadWindow();
+                });
+            } else {
+                // Локальный запуск без Bitrix24
+                window.location.href = "{% url 'internship_b24:index' %}";
+            }
+        });
+    }
+
+    function initMap() {
+        const containerId = 'company-map';
+        const container = document.getElementById(containerId);
+        if (!container) {
+            return;
+        }
+
+        const map = new ymaps.Map(containerId, {
+            center: [55.751244, 37.618423], // старт — Москва, потом скорректируем
+            zoom: 3,
+            controls: ['zoomControl', 'typeSelector', 'fullscreenControl']
+        });
+
+        // Читаем данные компаний из скрытого script[type=json]
+        let companies = [];
+        try {
+            const raw = document.getElementById('companies-data').textContent || '[]';
+            companies = JSON.parse(raw);
+        } catch (e) {
+            console.warn('Invalid companies JSON', e);
+        }
+
+        if (!companies.length) {
+            return;
+        }
+
+        const allCoords = [];
+
+        function updateView() {
+            if (!allCoords.length) {
+                return;
+            }
+
+            if (allCoords.length === 1) {
+                // Одна точка — просто центрируемся на неё
+                map.setCenter(allCoords[0], 14);
+            } else {
+                // Несколько точек — считаем реальные границы
+                const lats = allCoords.map(p => p[0]);
+                const lons = allCoords.map(p => p[1]);
+
+                const bounds = [
+                    [Math.min.apply(null, lats), Math.min.apply(null, lons)],
+                    [Math.max.apply(null, lats), Math.max.apply(null, lons)],
+                ];
+
+                map.setBounds(bounds, {
+                    checkZoomRange: true,
+                    zoomMargin: 40
+                });
+            }
+        }
+
+        companies.forEach(function (c) {
+            if (!c.address) return;
+
+            ymaps.geocode(c.address, { results: 1 }).then(function (res) {
+                const first = res.geoObjects.get(0);
+                if (!first) return;
+
+                const coords = first.geometry.getCoordinates();
+                allCoords.push(coords);
+
+                const placemark = new ymaps.Placemark(coords, {
+                    hintContent: c.title,
+                    balloonContent:
+                        '<strong>' + (c.title || '') + '</strong><br>' +
+                        (c.address || '')
+                });
+
+                map.geoObjects.add(placemark);
+                updateView();
+            });
+        });
+    }
+
+    if (window.ymaps && ymaps.ready) {
+        ymaps.ready(initMap);
+    }
+})();
+</script>
+
+{% endblock %}

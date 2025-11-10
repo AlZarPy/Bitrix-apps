@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="toolbar">
+  <a id="toRoot" class="btn" href="#">На главную</a>
+  <a class="btn" href="{% url 'internship_b24:contacts:import' %}">Новый импорт</a>
+</div>
+
+<div class="card">
+  <h1 class="section-title">Результат импорта</h1>
+
+  <p>Всего строк в файле: <strong>{{ result.total }}</strong></p>
+  <p>Успешно создано контактов: <strong class="text-success">{{ result.created }}</strong></p>
+  <p>Пропущено/с ошибками: <strong class="text-error">{{ result.skipped }}</strong></p>
+
+  {% if result.errors %}
+    <h2 class="section-title" style="margin-top: 16px;">Подробности по ошибкам</h2>
+    <ul class="form-hint">
+      {% for e in result.errors %}
+        <li>{{ e }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<script>
+  (function () {
+    const btnHome = document.getElementById('toRoot');
+    if (!btnHome) return;
+    btnHome.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (window.BX24 && BX24.reloadWindow) {
+        BX24.init(() => BX24.reloadWindow());
+      } else {
+        window.location.href = "{% url 'internship_b24:index' %}";
+      }
+    });
+  })();
+</script>
+
+{% endblock %}

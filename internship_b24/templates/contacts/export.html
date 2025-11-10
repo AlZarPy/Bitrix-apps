@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="toolbar">
+    <a id="toRoot" class="btn" href="#">На главную</a>
+    <a class="btn" href="{% url 'internship_b24:contacts:import' %}">Импорт контактов</a>
+</div>
+
+<div class="card">
+    <h1 class="section-title">Экспорт контактов</h1>
+
+    <p class="muted">
+        Выгрузите контакты из Bitrix24 в формате CSV или XLSX.
+        Можно отфильтровать по дате создания и по названию компании.
+    </p>
+
+    <form method="post" class="form-vertical" style="margin-top: 16px;">
+        {% csrf_token %}
+
+        <div class="form-row">
+            <label for="format" class="input-label">Формат файла</label>
+            <select id="format" name="format" class="input-field" style="max-width: 220px;">
+                <option value="csv">CSV</option>
+                <option value="xlsx">XLSX</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="date_from" class="input-label">Дата создания — от</label>
+            <input
+                id="date_from"
+                name="date_from"
+                type="date"
+                class="input-field"
+                style="max-width: 220px;"
+            >
+        </div>
+
+        <div class="form-row">
+            <label for="date_to" class="input-label">Дата создания — до</label>
+            <input
+                id="date_to"
+                name="date_to"
+                type="date"
+                class="input-field"
+                style="max-width: 220px;"
+            >
+        </div>
+
+        <div class="form-row">
+            <label for="company" class="input-label">Фильтр по компании</label>
+            <input
+                id="company"
+                name="company"
+                type="text"
+                class="input-field"
+                placeholder="Часть названия компании"
+                style="max-width: 320px;"
+            >
+            <div class="form-hint">
+                Если указано, будут выгружены только контакты, связанные с компаниями,
+                название которых содержит указанный текст.
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Скачать файл</button>
+    </form>
+
+    {% if messages %}
+        <div class="form-hint" style="margin-top: 12px;">
+            {% for message in messages %}
+                <div class="msg msg-{{ message.tags|default:'info' }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<script>
+(function () {
+    const btnHome = document.getElementById('toRoot');
+    if (!btnHome) return;
+
+    btnHome.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (window.BX24 && BX24.reloadWindow) {
+            BX24.init(function () {
+                BX24.reloadWindow();
+            });
+        } else {
+            window.location.href = "{% url 'internship_b24:index' %}";
+        }
+    });
+})();
+</script>
+
+{% endblock %}

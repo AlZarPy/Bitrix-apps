@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="toolbar">
+    <a id="toRoot" class="btn" href="#">На главную</a>
+    <a class="btn" href="{% url 'internship_b24:contacts:export' %}">Экспорт контактов</a>
+</div>
+
+<div class="card">
+    <h1 class="section-title">Импорт контактов</h1>
+
+    <p class="muted">
+        Загрузите файл формата <strong>CSV</strong> или <strong>XLSX</strong> со столбцами:
+        <code>имя, фамилия, номер телефона, почта, компания</code>.
+        Компании будут сопоставлены по названию, дубликаты по телефону/почте не создаются.
+    </p>
+
+    <form method="post" enctype="multipart/form-data" class="form-vertical" style="margin-top: 16px;">
+        {% csrf_token %}
+
+        <div class="form-row">
+            <label for="file" class="input-label">Файл для импорта</label>
+            <input id="file" name="file" type="file" class="input-field" accept=".csv,.xlsx" required>
+            <div class="form-hint">
+                Поддерживаются UTF-8 CSV и XLSX. Первая строка может быть заголовком.
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Импортировать контакты</button>
+    </form>
+
+    {% if messages %}
+        <div class="form-hint" style="margin-top: 12px;">
+            {% for message in messages %}
+                <div class="msg msg-{{ message.tags|default:'info' }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<script src="https://api.bitrix24.com/api/v1/"></script>
+<script>
+(function () {
+    const btnHome = document.getElementById('toRoot');
+    if (!btnHome) return;
+
+    btnHome.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (window.BX24 && BX24.reloadWindow) {
+            BX24.init(function () {
+                BX24.reloadWindow();
+            });
+        } else {
+            window.location.href = "{% url 'internship_b24:index' %}";
+        }
+    });
+})();
+</script>
+
+{% endblock %}
